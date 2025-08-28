@@ -76,9 +76,15 @@ class TestAgent:
 
         try:
             handler = COMMAND_HANDLERS.get(cmd_type)
-
+            #pdb.set_trace()
             if not handler:
-                response = self._make_error(test_id, f"Unknown command type: {cmd_type}")
+                response = {
+                    "test_id": test_id,
+                    "agentStatus": "TestAgentFail",
+                    "agentError": f"Unknown command type: {cmd_type}",
+                }
+                    
+                 
                 return self._send_response(response, is_stream=False)
 
             
@@ -98,47 +104,9 @@ class TestAgent:
         except Exception as e:
             response = {
                 "test_id": test_id,
-                "type": "RunTestReply", 
-                "testStatus": "NotDefined",
                 "agentStatus": "TestAgentFail",
                 "agentError": str(e),
             }
-
-        # Same Kafka vs local_mode logic as before
-
-        """  if self.local_mode:
-            logger.info("LOCAL MODE RESPONSE: %s", json.dumps(response, indent=2))
-        else:
-            if response.get("testStatus") == "TestSuccess":
-                logger.info(f"Test {test_id} completed successfully, sending reply...")
-                
-                self.producer.produce(
-                    REPLY_TOPIC,
-                    key=str(test_id),
-                    value=json.dumps(response),
-                    callback=self._delivery_report,
-                )
-            elif response.get("agentStatus") == "AgentFail":
-                logger.error(f"Test {test_id} failed due to {response.get('agentStatus')}: {response.get('agentError')}, not sending success reply.")
-            else:
-                error = "Dummy error"
-                logger.warning(f"Test {test_id} failed due to test system error {error}, not sending success reply.")
-                
-                response = {
-                    "test_id": test_id,
-                    "type": "RunTestReply",
-                    "testStatus": "TestFail",
-                    "data": error,
-                }
-                self.producer.produce(
-                    REPLY_TOPIC,
-                    key=str(test_id),
-                    value=json.dumps(response),
-                    callback=self._delivery_report,
-                )
-            self.producer.poll(0.1) """
-     
-
 
     def _delivery_report(self, err, msg):
         if err:
@@ -154,10 +122,10 @@ class TestAgent:
             return
 
         if response.get("agentStatus") == "TestAgentFail": 
-            logger.error(f"Test {test_id} failed due to {response.get('agentStatus')}: {response.get('agentError')}, not sending success reply.")
+            logger.error(f"Test {response.get("test_id")} failed due to {response.get('agentStatus')}: {response.get('agentError')}, not sending success reply.")
         elif response.get("testStatus") == "TestFail": 
             test_error = response.get(testError)
-            logger.warning(f"Test {test_id} failed due to test system error: {test_error}, not sending success reply.")
+            logger.warning(f"Test {response.get("test_id")} failed due to test system error: {test_error}, not sending success reply.")
         else:
             self.producer.produce(
                 topic,

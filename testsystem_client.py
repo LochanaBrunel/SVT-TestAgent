@@ -57,7 +57,7 @@ class TestSystemClient:
                 error = "Test failed due to power supply issue"
                 yield error, testStatus, progMsg
     # ------------------------
-    # Helper: Progress with Milestones 
+    # Helper: Progress Emulator with Milestones  
     # ------------------------
     def _progress_emulator(self, duration: float = 2.0, vInTarget: float = 0.0, chip_type: str = "Unknown"):
         """
