@@ -22,6 +22,11 @@ python3 send_request.py
 
 ## Running test agent
 
-python3 
+python3 -m test_agent config.py
+
+-> add the config.py needed for the configrations needed. 
 
 
+## Running in local mode to test without getting kafka broker involved (local mode)
+
+python3 -m test_agent_dev config.py --local --json ExternalDummies/test_message.json
