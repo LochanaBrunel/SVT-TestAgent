@@ -1,20 +1,18 @@
 import json
 import logging
-import pdb
+import sys
+import importlib.util
 from confluent_kafka import Producer, Consumer
-
-REQUEST_TOPIC = "svt.test-agent.request"
-REPLY_TOPIC = "svt.test-agent.request1.reply"
-
-KAFKA_CONFIG = {
-    "bootstrap.servers": "localhost:9095",
-    "group.id": "test-client",
-    "auto.offset.reset": "earliest",
-}
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("RequestSender")
 
+def load_config(path):
+    """Dynamically import a config module from a given file path."""
+    spec = importlib.util.spec_from_file_location("config", path)
+    config = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(config)
+    return config
 
 def delivery_report(err, msg):
     if err:
@@ -22,27 +20,27 @@ def delivery_report(err, msg):
     else:
         logger.info(f"Message delivered to {msg.topic()} [{msg.partition()}] @ offset {msg.offset()}")
 
+def send_request(json_file: str, config, wait_for_reply=True):
+    REQUEST_TOPIC = config.REQUEST_TOPIC
+    REPLY_TOPIC = config.REPLY_TOPIC
 
-def send_request(json_file: str, wait_for_reply=True):
     # Load request from file
     with open(json_file, "r") as f:
         request = json.load(f)
 
-    producer = Producer({"bootstrap.servers": KAFKA_CONFIG["bootstrap.servers"]})
+    producer = Producer(config.KAFKA_CONFIG["producer"])
     consumer = None
 
     if wait_for_reply:
-        consumer = Consumer(KAFKA_CONFIG)
+        consumer = Consumer(config.KAFKA_CONFIG["consumer"])
         consumer.subscribe([REPLY_TOPIC])
 
-    # Build headers (can be dynamic or hard-coded)
     headers = [
         ("cmdType", str(request.get("command", ""))),
         ("correlationId", str(request.get("testId", ""))),
         ("replyTopic", str(REPLY_TOPIC)),
     ]
 
-    # Produce request with key + headers
     producer.produce(
         REQUEST_TOPIC,
         key=str(request.get("testId")),
@@ -70,6 +68,13 @@ def send_request(json_file: str, wait_for_reply=True):
 
         consumer.close()
 
-
 if __name__ == "__main__":
-    send_request("ExternalDummies/test_message.json", wait_for_reply=False)
+    if len(sys.argv) < 3:
+        print("Usage: python3 send_request.py <config_file.py> <message_file.json>")
+        sys.exit(1)
+
+    config_path = sys.argv[1]
+    message_file = sys.argv[2]
+
+    config = load_config(config_path)
+    send_request(message_file, config, wait_for_reply=False)

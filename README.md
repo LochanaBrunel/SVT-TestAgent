@@ -10,7 +10,7 @@ Refer to README.md in cd Dev/Kafka to start the kafka broker
 
 cd ExternalDummies
 
-python3 TopicCreation.py
+python3 TopicCreation.py config.py
 
 ## Send messages
 
@@ -18,7 +18,8 @@ add the message with the right format to the test_message.json inside ExternalDu
 
 and
 
-python3 send_request.py
+cd ExternalDummies
+python3 send_request.py ../config.py test_message.json
 
 ## Running test agent
 
