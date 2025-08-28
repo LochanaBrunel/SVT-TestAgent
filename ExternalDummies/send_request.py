@@ -72,4 +72,4 @@ def send_request(json_file: str, wait_for_reply=True):
 
 
 if __name__ == "__main__":
-    send_request("SVT-Supervisor_dummy/test_message.json", wait_for_reply=False)
+    send_request("ExternalDummies/test_message.json", wait_for_reply=False)

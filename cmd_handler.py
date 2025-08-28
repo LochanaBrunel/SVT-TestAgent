@@ -1,6 +1,6 @@
 import inspect
-from .db_client import fetch_from_db
-from .testsystem_client import TestSystemClient
+from db_client import fetch_from_db
+from testsystem_client import TestSystemClient
 
 client = TestSystemClient()
 

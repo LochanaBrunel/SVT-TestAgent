@@ -4,7 +4,7 @@ import pdb
 import types
 import os, sys, importlib.util, argparse
 from confluent_kafka import Consumer, Producer, KafkaException
-from .cmd_handler import GetAllTests, RunTest, AbortTest, TestStatus, RunLoopTest, RunTestPlan
+from cmd_handler import GetAllTests, RunTest, AbortTest, TestStatus, RunLoopTest, RunTestPlan
 
 logger = logging.getLogger("TestAgent")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s - %(message)s")

@@ -1,34 +1,27 @@
 # SLDO Test Agent
 
-This provides a clean separation between messaging, logic, database access, and test system interaction  
+## Set up the Agent
 
----
+Start docker on your compter
 
-## Project Structure
+Refer to README.md in cd Dev/Kafka to start the kafka broker
 
+## Create Topics
 
-sldo_agent/
-│
-├── __init__.py           # Package marker
-├── sldo_agent.py         # Main agent (Kafka consumer/producer, command dispatcher)
-├── cmd_handler.py        # Logic for each command (run_test, fetch_db, retrive_db.)
-├── db_client.py          # Database client (abstracts queries, error handling)
-├── ts_client.py          # Interface to instruments / hardware test system
-├── config.py             # Centralized config (Kafka topics, DB settings, retries)
-└── utils.py              # Helpers (logging wrappers, validation, error formatting)
+cd ExternalDummies
 
-## TODO
+python3 TopicCreation.py
 
-# Step1
+## Send messages
 
-1. Describe the commands
-2. Describe the message json structure
+add the message with the right format to the test_message.json inside ExternalDummies
 
-# Step 2 
+and
 
-1. Write separate codes to decode messages and pass commands. 
+python3 send_request.py
 
-# Step 3
+## Running test agent
 
-1. Link decodes with agents to pass to clients
+python3 
+
 
