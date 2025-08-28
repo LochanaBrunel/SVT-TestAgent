@@ -1,6 +1,7 @@
 import time
 import logging
 from tqdm import tqdm
+from Registries.validateTests import validate_test_values
 
 logger = logging.getLogger("TestSystemClient")
 logger.setLevel(logging.INFO)
@@ -52,7 +53,13 @@ class TestSystemClient:
                 testValue = "Running..."
                 yield testValue, testStatus, progMsg
             elif testStatus == "TestSuccess":
-                yield testValues, testStatus, progMsg
+                
+                is_testValue_valid, error_msg = validate_test_values(testValues, chip_type, test_name)
+                if is_testValue_valid:
+                    yield testValues, testStatus, progMsg
+                else:
+                    logger.error(f"{testStatus}, but incorrect output format : {error_msg}")
+                    return
             elif testStatus == "TestFailed":
                 error = "Test failed due to power supply issue"
                 yield error, testStatus, progMsg

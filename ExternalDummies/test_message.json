@@ -1,6 +1,6 @@
 {
     "command": "RunTest",
-    "testId": 64,
+    "testId": 66,
     "data": {
         "chipId": 0,
         "testSetupId": 0,

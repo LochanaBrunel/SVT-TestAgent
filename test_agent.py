@@ -4,20 +4,12 @@ import pdb
 import types
 import os, sys, importlib.util, argparse
 from confluent_kafka import Consumer, Producer, KafkaException
-from cmd_handler import GetAllTests, RunTest, AbortTest, TestStatus, RunLoopTest, RunTestPlan
+from Registries.registryOfCommands import DEFAULT_COMMAND_HANDLERS, CHIP_COMMAND_OVERRIDES
+from Registries.validateTests import validate
 
 logger = logging.getLogger("TestAgent")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s - %(message)s")
 
-# Mapping of command types to handlers
-COMMAND_HANDLERS = {
-    "GetAllTests": GetAllTests,
-    "RunTest": RunTest,
-    "AbortTest": AbortTest,
-    "TestStatus": TestStatus,
-    "RunLoopTest": RunLoopTest,
-    "RunTestPlan": RunTestPlan,
-}
 
 
 class TestAgent:
@@ -45,7 +37,7 @@ class TestAgent:
         logger.info("TestAgent started, listening for commands...")
         try:
             while True:
-                msg = self.consumer.poll(timeout=0.1)
+                msg = self.consumer.poll(timeout=0.5)
                 if msg is None:
                     continue
                 if msg.error():
@@ -72,73 +64,55 @@ class TestAgent:
         cmd_type = command.get("command")
         data = command.get("data", {})
         test_id = command.get("testId", "unknown")
+        #pdb.set_trace()
+        #Validation message
+        is_msg_valid, error_msg = validate(command)
+        if is_msg_valid:
 
+            try:
+                # Extract chipName safely
+                try:
+                    chip_name = data.get("params", {}).get("chipName", "")
+                except Exception:
+                    chip_name = ""
 
-        try:
-            handler = COMMAND_HANDLERS.get(cmd_type)
+                # Get combined command handlers for the chip
+                handlers = self.get_command_handlers_for_chip(chip_name)
+                handler = handlers.get(cmd_type)
 
-            if not handler:
-                response = self._make_error(test_id, f"Unknown command type: {cmd_type}")
-                return self._send_response(response, is_stream=False)
+                if not handler:
+                    response = self._make_error(test_id, f"Unknown command type: {cmd_type}")
+                    return self._send_response(response, is_stream=False)
 
-            
+                response = handler(data)
 
-            response = handler(data)
-
-            # If handler is a generator   
-            if isinstance(response, types.GeneratorType):
-                for r in response:
+                # If handler is a generator   
+                if isinstance(response, types.GeneratorType):
+                    for r in response:
+                        response = {**r, "test_id": test_id, "agentStatus": "TestAgentSuccess"}
+                        self._send_response(response, is_stream=(response["type"].endswith("StreamReply")))
+                        
+                else:
                     response = {**r, "test_id": test_id, "agentStatus": "TestAgentSuccess"}
-                    self._send_response(response, is_stream=(response["type"].endswith("StreamReply")))
-                    
-            else:
-                response = {**r, "test_id": test_id, "agentStatus": "TestAgentSuccess"}
-                self._send_response(response, is_stream=False)
+                    self._send_response(response, is_stream=False)
 
-        except Exception as e:
-            response = {
-                "test_id": test_id,
-                "type": "RunTestReply", 
-                "testStatus": "NotDefined",
-                "agentStatus": "TestAgentFail",
-                "agentError": str(e),
-            }
-
-        # Same Kafka vs local_mode logic as before
-
-        """  if self.local_mode:
-            logger.info("LOCAL MODE RESPONSE: %s", json.dumps(response, indent=2))
-        else:
-            if response.get("testStatus") == "TestSuccess":
-                logger.info(f"Test {test_id} completed successfully, sending reply...")
-                
-                self.producer.produce(
-                    REPLY_TOPIC,
-                    key=str(test_id),
-                    value=json.dumps(response),
-                    callback=self._delivery_report,
-                )
-            elif response.get("agentStatus") == "AgentFail":
-                logger.error(f"Test {test_id} failed due to {response.get('agentStatus')}: {response.get('agentError')}, not sending success reply.")
-            else:
-                error = "Dummy error"
-                logger.warning(f"Test {test_id} failed due to test system error {error}, not sending success reply.")
-                
+            except Exception as e:
                 response = {
                     "test_id": test_id,
-                    "type": "RunTestReply",
-                    "testStatus": "TestFail",
-                    "data": error,
+                    "type": "RunTestReply", 
+                    "testStatus": "NotDefined",
+                    "agentStatus": "TestAgentFail",
+                    "agentError": str(e),
                 }
-                self.producer.produce(
-                    REPLY_TOPIC,
-                    key=str(test_id),
-                    value=json.dumps(response),
-                    callback=self._delivery_report,
-                )
-            self.producer.poll(0.1) """
-     
+        else:
+            logger.error(f"Kafka message is not recognized by the TestAgent : {error_msg}")
 
+
+
+    def get_command_handlers_for_chip(self, chip_name: str):
+        chip_commands = CHIP_COMMAND_OVERRIDES.get(chip_name, {})
+        combined = {**DEFAULT_COMMAND_HANDLERS, **chip_commands}
+        return combined
 
     def _delivery_report(self, err, msg):
         if err:

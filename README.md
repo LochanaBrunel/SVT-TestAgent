@@ -30,4 +30,4 @@ python3 -m test_agent config.py
 
 ## Running in local mode to test without getting kafka broker involved (local mode)
 
-python3 -m test_agent_dev config.py --local --json ExternalDummies/test_message.json
+python3 -m test_agent config.py --local --json ExternalDummies/test_message.json
