@@ -1,0 +1,14 @@
+services:
+  kafka-ui:
+    image: provectuslabs/kafka-ui
+    container_name: svt-kafka-ui
+    # depends_on:
+    #   - kafka
+    # ports:
+    #   - "8088:8080"
+    network_mode: "host"
+    restart: always
+    environment:
+      - KAFKA_CLUSTERS_0_NAME=local
+      # - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:9093
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=localhost:9092
