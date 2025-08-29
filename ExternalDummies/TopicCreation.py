@@ -1,6 +1,7 @@
 import sys
 from kafka.admin import KafkaAdminClient, NewTopic
 import importlib.util
+import pdb
 
 def load_config(path):
     """Dynamically import a config module from a given file path."""
@@ -10,6 +11,7 @@ def load_config(path):
     return config
 
 def create_topics(config):
+    
     """Create topics defined in the config module."""
     bootstrap_servers = config.KAFKA_CONFIG["producer"]["bootstrap.servers"]
     topics = [config.REQUEST_TOPIC, config.REPLY_TOPIC]
@@ -23,7 +25,7 @@ def create_topics(config):
 
     try:
         admin.create_topics(new_topics=new_topics, validate_only=False)
-        print(f"✅ Topics created: {topics}")
+        print(f"✅ At port: {bootstrap_servers}, Topics created: {topics}")
     except Exception as e:
         print(f"⚠️ Error while creating topics: {e}")
 

@@ -4,13 +4,22 @@
 
 Start docker on your compter
 
-Refer to README.md in cd Dev/Kafka to start the kafka broker
+KAFKA_LOCAL_PORT=<Add_the_port_prefered:default-9095> docker compose up -d
+
+-9093 cannot be used: Kafka UI is using that to access the container
+
+!If needed to clean the containers, will lost all messages logged into the broker!. 
+
+docker compose down -v 
+
 
 ## Create Topics
 
 cd ExternalDummies
 
-python3 TopicCreation.py config.py
+KAFKA_LOCAL_PORT=<Add_the_port_prefered:default-9095> python3 TopicCreation.py config.py
+
+*the config.py will remember this port until you call KAFKA_LOCAL_PORT again with a different port.*
 
 ## Send messages
 
@@ -25,7 +34,7 @@ python3 send_request.py ../config.py test_message.json
 
 python3 -m test_agent config.py
 
--> add the config.py needed for the configrations needed. 
+**add different config.py if needed for the different configrations needed. Make sure to match the KAFKA_LOCAL_PORT**
 
 
 ## Running in local mode to test without getting kafka broker involved (local mode)
