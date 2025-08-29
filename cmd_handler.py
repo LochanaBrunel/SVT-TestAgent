@@ -32,14 +32,14 @@ def RunTest(data):
             yield response
             return  # generator ends → agent knows test is complete
 
-        elif testStatus == "TestFailure":
+        elif testStatus == "TestFail":
             error = testValues
             response = {
                 "type": f"{cmd_type}Reply",
                 "testStatus": testStatus,
                 "testError": error,
             }
-            yield response
+            yield response  
             return  # generator ends → agent knows test is complete
 
 

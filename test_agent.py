@@ -14,7 +14,6 @@ COMMAND_HANDLERS = {
     "GetAllTests": GetAllTests,
     "RunTest": RunTest,
     "AbortTest": AbortTest,
-    "TestStatus": TestStatus,
     "RunLoopTest": RunLoopTest,
     "RunTestPlan": RunTestPlan,
 }
@@ -42,12 +41,17 @@ class TestAgent:
             self._process_command(self.debug_msg)
             return
 
-        logger.info("TestAgent started, listening for commands...")
+        logger.info("TestAgent started")
+        idle_logged = False
         try:
             while True:
                 msg = self.consumer.poll(timeout=0.1)
                 if msg is None:
+                    if not idle_logged:
+                        logger.info("TestAgent idling, listening for commands...")
+                        idle_logged = True
                     continue
+                idle_logged = False
                 if msg.error():
                     logger.error(f"Kafka error: {msg.error()}")
                     continue
@@ -123,10 +127,18 @@ class TestAgent:
 
         if response.get("agentStatus") == "TestAgentFail": 
             logger.error(f"Test {response.get("test_id")} failed due to {response.get('agentStatus')}: {response.get('agentError')}, not sending success reply.")
-        elif response.get("testStatus") == "TestFail": 
-            test_error = response.get(testError)
-            logger.warning(f"Test {response.get("test_id")} failed due to test system error: {test_error}, not sending success reply.")
+        elif response.get("testStatus") == "TestFail":
+            del response["agentStatus"]
+            self.producer.produce(
+                topic,
+                key=str(response["test_id"]),
+                value=json.dumps(response),
+                callback=self._delivery_report,
+            )
+            self.producer.poll(0.1)
+            
         else:
+            del response["agentStatus"]
             self.producer.produce(
                 topic,
                 key=str(response["test_id"]),

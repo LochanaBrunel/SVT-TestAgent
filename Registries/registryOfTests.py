@@ -5,25 +5,23 @@ CHIP_TEST_DEFINITIONS = {
                 "mode", "loadCapacitance", "loadCurrent", "temperature"
             },
             "testValues": {
-                "inputs": set(),   # can be empty if only test-specific
-                "outputs": set()
+                "inputs": {"vInTarget", "iInLimit", "rampRate"},  
+                "outputs": {"v_out(V)"}
             }
         },
         "Tests": {
             "PowerRampUp": {
-                "inputs": {"vInTarget", "iInLimit", "rampRate"},
                 "testValues": {
-                    "inputs": {"vInTarget", "iInLimit", "rampRate"},
-                    "outputs": {"v_out(V)"}
+                    "inputs": set(),
+                    "outputs": set()
                 }
             },
             "PSRR": {
-                "inputs": {"vInTarget", "loadCurrent"},
                 "testValues": {
-                    "inputs": {"vInTarget", "loadCurrent"},
-                    "outputs": {"dropoutVoltage"}
+                    "inputs": {"Signal_amplitude", "Signal_frequency"},
+                    "outputs": {"PSRR"}
                 }
-            }
+            } 
         }
     },
 

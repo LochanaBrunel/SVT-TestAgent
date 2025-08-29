@@ -53,13 +53,14 @@ class TestSystemClient:
                 yield testValue, testStatus, progMsg
             elif testStatus == "TestSuccess":
                 yield testValues, testStatus, progMsg
-            elif testStatus == "TestFailed":
-                error = "Test failed due to power supply issue"
+            elif testStatus == "TestFail":
+                error = "Power supply issue"
+                logger.warning(f"{testStatus}: {chip_type} {test_name} failed due to {error}.")
                 yield error, testStatus, progMsg
     # ------------------------
     # Helper: Progress Emulator with Milestones  
     # ------------------------
-    def _progress_emulator(self, duration: float = 2.0, vInTarget: float = 0.0, chip_type: str = "Unknown"):
+    def _progress_emulator(self, duration: float = 2.0, vInTarget: float = 0.0, chip_type: str = "Unknown", is_testFail=False):
         """
 
         Args:
@@ -80,16 +81,23 @@ class TestSystemClient:
             if i in checkpoints and vInTarget > 0:
                 fraction = (i // 20) / 5   # e.g. 20% → 0.2, 40% → 0.4
                 ramped_val = round(fraction * vInTarget, 3)
-
-                if ramped_val == vInTarget:
+                if i== 60 and is_testFail:
+                    testStatus = "TestFail"
+                    progMsg = f"{testStatus}: {chip_type} Power Ramped stopped at {ramped_val}V."
+                    logger.warning(progMsg)
+                elif ramped_val == vInTarget:
                     testStatus = "TestSuccess"
+                    progMsg = f"{testStatus}: {chip_type} Power Ramped up to {ramped_val}V."
+                    logger.info(progMsg)
                 else:
                     testStatus = "TestRunning"
+                    progMsg = f"{testStatus}: {chip_type} Power Ramped up to {ramped_val}V."
+                    logger.info(progMsg)
 
-                progMsg = f"{testStatus}: {chip_type} Power Ramped up to {ramped_val}V."
+                
 
                 # Yield only if something changed
                 if ramped_val != prev_val or testStatus != prev_status:
-                    logger.info(progMsg)
+                    
                     yield progMsg, testStatus
                     prev_val, prev_status = ramped_val, testStatus
