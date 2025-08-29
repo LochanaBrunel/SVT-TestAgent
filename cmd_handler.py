@@ -8,7 +8,7 @@ def GetAllTests():
     return client.get_all_tests()
 
 def RunTest(data):
-    """Legacy mode: run test and collect all updates into a list (not streaming)."""
+    """run test and collect all updates into a list."""
     params = data.get("params", {})
     chipType = params.get("chipName", "")
     testName = params.get("testName", "")
@@ -32,14 +32,14 @@ def RunTest(data):
             yield response
             return  # generator ends → agent knows test is complete
 
-        elif testStatus == "TestFailure":
+        elif testStatus == "TestFail":
             error = testValues
             response = {
                 "type": f"{cmd_type}Reply",
                 "testStatus": testStatus,
                 "testError": error,
             }
-            yield response
+            yield response  
             return  # generator ends → agent knows test is complete
 
 

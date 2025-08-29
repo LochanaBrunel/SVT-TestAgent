@@ -69,7 +69,7 @@ class TestAgent:
         cmd_type = command.get("command")
         data = command.get("data", {})
         test_id = command.get("testId", "unknown")
-        #pdb.set_trace()
+        pdb.set_trace()
         #Validation message
         is_msg_valid, error_msg = validate(command)
         if is_msg_valid:
@@ -136,11 +136,19 @@ class TestAgent:
             return
 
         if response.get("agentStatus") == "TestAgentFail": 
-            logger.error(f"Test {test_id} failed due to {response.get('agentStatus')}: {response.get('agentError')}, not sending success reply.")
+            logger.error(f"Test {response.get("test_id")} failed due to {response.get('agentStatus')}: {response.get('agentError')}, not sending success reply.")
         elif response.get("testStatus") == "TestFail": 
-            test_error = response.get(testError)
-            logger.warning(f"Test {test_id} failed due to test system error: {test_error}, not sending success reply.")
+            del response["agentStatus"]
+            self.producer.produce(
+                topic,
+                key=str(response["test_id"]),
+                value=json.dumps(response),
+                callback=self._delivery_report,
+            )
+            self.producer.poll(0.1)
+            
         else:
+            del response["agentStatus"]
             self.producer.produce(
                 topic,
                 key=str(response["test_id"]),
