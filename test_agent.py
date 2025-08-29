@@ -34,12 +34,17 @@ class TestAgent:
             self._process_command(self.debug_msg)
             return
 
-        logger.info("TestAgent started, listening for commands...")
+        logger.info("TestAgent started")
+        idle_logged = False
         try:
             while True:
                 msg = self.consumer.poll(timeout=0.5)
                 if msg is None:
+                    if not idle_logged:
+                        logger.info("TestAgent idling, listening for commands...")
+                        idle_logged = True
                     continue
+                idle_logged = False
                 if msg.error():
                     logger.error(f"Kafka error: {msg.error()}")
                     continue
@@ -81,7 +86,11 @@ class TestAgent:
                 handler = handlers.get(cmd_type)
 
                 if not handler:
-                    response = self._make_error(test_id, f"Unknown command type: {cmd_type}")
+                    response = {
+                        "test_id": test_id,
+                        "agentStatus": "TestAgentFail",
+                        "agentError": f"Unknown command type: {cmd_type}",
+                    }
                     return self._send_response(response, is_stream=False)
 
                 response = handler(data)
@@ -99,13 +108,12 @@ class TestAgent:
             except Exception as e:
                 response = {
                     "test_id": test_id,
-                    "type": "RunTestReply", 
-                    "testStatus": "NotDefined",
                     "agentStatus": "TestAgentFail",
                     "agentError": str(e),
                 }
         else:
             logger.error(f"Kafka message is not recognized by the TestAgent : {error_msg}")
+
 
 
 
