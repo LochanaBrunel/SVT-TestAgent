@@ -2,7 +2,7 @@ import os
 import json
 from pathlib import Path
 
-#create kafka_port.json in the config file path
+#create kafka_port.json in the config
 CONFIG_FILE = Path(__file__).with_name("kafka_port.json")
 
 # default if nothing exists

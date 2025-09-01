@@ -4,16 +4,16 @@ A lightweight test agent for interacting with Kafka brokers, running test comman
 
 ---
 
-## 🚀 Setup
+## Setup
 
 ### 1. Start Docker with Kafka
 ```bash
 KAFKA_LOCAL_PORT=<preferred_port: default=9095> docker compose up -d
 ```
 
-⚠️ **Note:**  
+**Note:**  
 - Do **not** use port `9093` — it is reserved by Kafka UI.  
-- If you need to reset/clean the containers (⚠️ **this will delete all broker messages**):
+- If you need to reset/clean the containers (**this will delete all broker messages**):
 ```bash
 docker compose down -v
 ```
@@ -51,7 +51,7 @@ python3 -m test_agent config.py
 
 ---
 
-## 🧪 Local Mode (No Kafka Required)
+## Local Mode (No Kafka Required)
 For testing without involving a Kafka broker:
 ```bash
 python3 -m test_agent_dev config.py --local --json ExternalDummies/test_message.json
@@ -61,6 +61,6 @@ This runs the agent locally using the given JSON message.
 
 ---
 
-## ⚙️ Notes
+## Notes
 - Keep Kafka and agent configs in sync via `config.py`.  
 - Cleaning containers (`docker compose down -v`) wipes broker state.  
