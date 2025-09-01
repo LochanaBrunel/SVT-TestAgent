@@ -2,45 +2,35 @@ CHIP_TEST_DEFINITIONS = {
     "SLDO": {
         "default": {
             "TestConfiguration": {
-                "mode", "loadCapacitance", "loadCurrent", "temperature"
+                "mode": {"unit": None ,"enum": [0, 1] },
+                "loadCapacitance": {"unit": "nF","enum": [10, 100, 1000, 10000] },
+                "loadCurrent": {"unit": "mA", "enum": [40, 500, 900]},
+                "temperature": {"unit": "C", "min": -20, "max": 125},
             },
             "testValues": {
-                "inputs": {"vInTarget", "iInLimit", "rampRate"},  
-                "outputs": {"v_out(V)"}
+                "inputs": {
+                    "vInTarget": {"unit": "V", "min": 0, "max": 1.55},
+                    "iInLimit": {"unit": "A",  "min": 0, "max": 1.5},
+                    "rampRate": {"unit": "kV/s", "default": 3.1},
+                },
+                "outputs": {
+                    "v_out": {"unit": "V", "max": 10},
+                }
             }
         },
         "Tests": {
             "PowerRampUp": {
-                "testValues": {
-                    "inputs": set(),
-                    "outputs": set()
-                }
+                "testValues": {"inputs": {}, "outputs": {}}
             },
             "PSRR": {
                 "testValues": {
-                    "inputs": {"Signal_amplitude", "Signal_frequency"},
-                    "outputs": {"PSRR"}
-                }
-            } 
-        }
-    },
-
-    "NVG": {
-        "default": {
-            "TestConfiguration": {
-                "loadCapacitance", "loadCurrent", "temperature"
-            },
-            "testValues": {
-                "inputs": set(),
-                "outputs": set()
-            }
-        },
-        "Tests": {
-            "TransientTest": {
-                "inputs": {"vInTarget", "iInLimit", "rampRate"},
-                "testValues": {
-                    "inputs": {"vInTarget", "iInLimit", "rampRate"},
-                    "outputs": {"v_out"}
+                    "inputs": {
+                        "Signal_amplitude": {"unit": "V"},
+                        "Signal_frequency": {"unit": "Hz"},
+                    },
+                    "outputs": {
+                        "PSRR": {"unit": "dB"}
+                    }
                 }
             }
         }

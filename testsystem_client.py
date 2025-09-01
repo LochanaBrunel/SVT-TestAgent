@@ -47,7 +47,7 @@ class TestSystemClient:
             vInTarget = 0.0
 
         # Stream progress from emulator
-        for progMsg, testStatus in self._progress_emulator(2, vInTarget, chip_type):
+        for progMsg, testStatus in self._progress_emulator(2, vInTarget, chip_type, test_name, True):
             if testStatus == "TestRunning":
                 testValue = "Running..."
                 yield testValue, testStatus, progMsg
@@ -60,7 +60,7 @@ class TestSystemClient:
     # ------------------------
     # Helper: Progress Emulator with Milestones  
     # ------------------------
-    def _progress_emulator(self, duration: float = 2.0, vInTarget: float = 0.0, chip_type: str = "Unknown", is_testFail=False):
+    def _progress_emulator(self, duration: float = 2.0, vInTarget: float = 0.0, chip_type: str = "Unknown", test_name: str = "PowerRampUp" ,is_testFail=False):
         """
 
         Args:
@@ -83,15 +83,15 @@ class TestSystemClient:
                 ramped_val = round(fraction * vInTarget, 3)
                 if i== 60 and is_testFail:
                     testStatus = "TestFail"
-                    progMsg = f"{testStatus}: {chip_type} Power Ramped stopped at {ramped_val}V."
+                    progMsg = f"{testStatus}: {chip_type} {test_name} stopped at {i}%."
                     logger.warning(progMsg)
                 elif ramped_val == vInTarget:
                     testStatus = "TestSuccess"
-                    progMsg = f"{testStatus}: {chip_type} Power Ramped up to {ramped_val}V."
+                    progMsg = f"{testStatus}: {chip_type} {test_name} completed succesfully."
                     logger.info(progMsg)
                 else:
                     testStatus = "TestRunning"
-                    progMsg = f"{testStatus}: {chip_type} Power Ramped up to {ramped_val}V."
+                    progMsg = f"{testStatus}: {chip_type} {test_name} completed upto {i}%."
                     logger.info(progMsg)
 
                 
