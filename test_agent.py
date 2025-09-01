@@ -65,13 +65,16 @@ class TestAgent:
                 logger.info("Agent shut down cleanly.")
 
     def _process_command(self, command: dict):
+        #pdb.set_trace() #for debugging
+
+        #Validation message
+        is_msg_valid, error_msg, command = validate(command)
+
         logger.info("Processing command: %s", command)
         cmd_type = command.get("command")
         data = command.get("data", {})
         test_id = command.get("testId", "unknown")
-        pdb.set_trace()
-        #Validation message
-        is_msg_valid, error_msg = validate(command)
+
         if is_msg_valid:
 
             try:

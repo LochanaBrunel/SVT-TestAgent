@@ -1,5 +1,6 @@
 import time
 import logging
+import pdb
 from tqdm import tqdm
 
 logger = logging.getLogger("TestSystemClient")
@@ -21,7 +22,6 @@ class TestSystemClient:
         self.initialize(chip_type, test_name)
         inputs = params.get("inputs", {})
         testConfig= params.get("TestConfiguration", {})
-
         yield from self.test_system_interface(chip_type, test_name, inputs, testConfig)
 
     def test_system_interface(self, chip_type: str, test_name: str, inputs: dict, testConfig: dict) -> dict:
@@ -40,11 +40,7 @@ class TestSystemClient:
         }
 
         # Parse vInTarget
-        vInTarget_str = inputs.get("vInTarget", "0V").replace("V", "")
-        try:
-            vInTarget = float(vInTarget_str)
-        except ValueError:
-            vInTarget = 0.0
+        vInTarget = float(inputs.get("vInTarget", 0))
 
         # Stream progress from emulator
         for progMsg, testStatus in self._progress_emulator(2, vInTarget, chip_type, True):

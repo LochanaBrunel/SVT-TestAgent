@@ -20,7 +20,8 @@ CHIP_TEST_DEFINITIONS = {
         },
         "Tests": {
             "PowerRampUp": {
-                "testValues": {"inputs": {}, "outputs": {}}
+                "TestConfiguration": {},
+                "testValues": {}
             },
             "PSRR": {
                 "testValues": {

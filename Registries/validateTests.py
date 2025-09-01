@@ -5,7 +5,22 @@ from .registryOfTests import CHIP_TEST_DEFINITIONS
 logger = logging.getLogger("TestSchemaValidation")
 logger.setLevel(logging.INFO)
 
+# --- Unit conversion map ---
+UNIT_CONVERSIONS = {
+    ("pF", "nF"): lambda v: v / 1000,
+    ("nF", "pF"): lambda v: v * 1000,
+    ("uF", "nF"): lambda v: v * 1000,
+    ("nF", "uF"): lambda v: v / 1000,
+    ("mV", "V"): lambda v: v / 1000,
+    ("V", "mV"): lambda v: v * 1000,
+    ("A", "mA"): lambda v: v * 1000,
+    ("mA", "A"): lambda v: v / 1000,
+    ("kV/s", "V/s"): lambda v: v * 1000,
+    ("V/s", "kV/s"): lambda v: v / 1000,
+    ("°C", "C"): lambda v: v,
+}
 
+# ----------------- Main validate -----------------
 def validate(command):
     try:
         data = command["data"]
@@ -28,96 +43,66 @@ def validate(command):
             raise ValueError(f"Unsupported test '{test_name}' for chip '{chip_name}'")
         test_def = chip_tests[test_name]
 
+        # Merge defaults + test-specific
         expected_config = _merge_dict("TestConfiguration", chip_defaults, test_def)
-        expected_inputs = _merge_dict("inputs", chip_defaults.get("testValues", {}), test_def.get("testValues", {}))
+        expected_inputs = _merge_dict("inputs", chip_defaults, test_def)
 
-        logger.info(f"Expected TestConfiguration keys: {set(expected_config.keys())}")
-        logger.info(f"Expected inputs keys: {set(expected_inputs.keys())}")
-
-        # Strip units from keys, but keep units for validation
+        # Extract values from message
         test_config_clean, config_units = _extract_units(test_config)
         inputs_clean, inputs_units = _extract_units(inputs)
 
+        # Apply defaults when not defined
+        test_config_clean, config_units = _apply_defaults(expected_config, test_config_clean, "TestConfiguration", config_units)
+        inputs_clean, inputs_units = _apply_defaults(expected_inputs, inputs_clean, "inputs", inputs_units)
+
+        # Correct units
+        test_config_clean, config_units = _correct_units(test_config_clean, config_units, expected_config, "TestConfiguration")
+        inputs_clean, inputs_units = _correct_units(inputs_clean, inputs_units, expected_inputs, "inputs")
+
+        # Validate
         check_fields("TestConfiguration", test_config_clean, expected_config, config_units)
         check_fields("inputs", inputs_clean, expected_inputs, inputs_units)
 
+        # Rebuild corrected command WITHOUT units in keys
+        corrected_params = {
+            "chipName": chip_name,
+            "testName": test_name,
+            "TestConfiguration": {k: v for k, v in test_config_clean.items()},
+            "inputs": {k: v for k, v in inputs_clean.items()}
+        }
+
+        corrected_command = {**command, "data": {**data, "params": corrected_params}}
+
         logger.info("Validation successful ✅")
-        return True, ""
+        return True, "", corrected_command
 
     except KeyError as e:
         logger.error(f"Validation failed: Missing required key {e}")
-        return False, f"Missing required key in test command: {e}"
+        return False, f"Missing required key in test command: {e}", command
     except ValueError as e:
         logger.error(f"Validation failed: {e}")
-        return False, str(e)
+        return False, str(e), command
 
-
-def validate_test_values(test_values, chip_name, test_name):
-    try:
-        logger.info(f"Validating testValues for chip='{chip_name}', test='{test_name}'")
-
-        if chip_name not in CHIP_TEST_DEFINITIONS:
-            return False, f"Unknown chip: {chip_name}"
-
-        chip_def = CHIP_TEST_DEFINITIONS[chip_name]
-        chip_defaults = chip_def.get("default", {})
-        chip_tests = chip_def.get("Tests", {})
-
-        if test_name not in chip_tests:
-            return False, f"Unknown test '{test_name}' for chip '{chip_name}'"
-
-        test_def = chip_tests[test_name]
-        expected_tv_inputs = _merge_dict("inputs", chip_defaults.get("testValues", {}), test_def.get("testValues", {}))
-        expected_tv_outputs = _merge_dict("outputs", chip_defaults.get("testValues", {}), test_def.get("testValues", {}))
-
-        tv_inputs_clean, tv_inputs_units = _extract_units(test_values.get("inputs", {}))
-        tv_outputs_clean, tv_outputs_units = _extract_units(test_values.get("outputs", {}))
-
-        check_fields("testValues.inputs", tv_inputs_clean, expected_tv_inputs, tv_inputs_units)
-        check_fields("testValues.outputs", tv_outputs_clean, expected_tv_outputs, tv_outputs_units)
-
-        logger.info("testValues validation successful ✅")
-        return True, ""
-
-    except KeyError as e:
-        logger.error(f"Validation failed: Missing key {e}")
-        return False, f"Missing key in testValues: {e}"
-    except ValueError as e:
-        logger.error(f"Validation failed: {e}")
-        return False, str(e)
-
-
+# ----------------- Helpers -----------------
 def _merge_dict(field, defaults, overrides):
-    """
-    Merge the schema dict for a specific field.
-    - `field` can be 'TestConfiguration', 'inputs', or 'outputs'
-    - Only keys relevant to that field are returned.
-    """
     merged = {}
+    if field in ("inputs", "outputs"):
+        base = defaults.get("testValues", {}).get(field, {}) if defaults else {}
+        over = overrides.get("testValues", {}).get(field, {}) if overrides else {}
+    else:
+        base = defaults.get(field, {}) if defaults else {}
+        over = overrides.get(field, {}) if overrides else {}
 
-    # Handle defaults
-    if defaults and isinstance(defaults, dict):
-        if field == "inputs" or field == "outputs":
-            merged.update(defaults.get("testValues", {}).get(field, {}))
+    for k, v in base.items():
+        merged[k] = v.copy() if isinstance(v, dict) else v
+    for k, v in over.items():
+        if isinstance(v, dict) and isinstance(merged.get(k), dict):
+            merged[k].update(v)
         else:
-            merged.update(defaults.get(field, {}))
-
-    # Handle overrides (test-specific)
-    if overrides and isinstance(overrides, dict):
-        if field == "inputs" or field == "outputs":
-            merged.update(overrides.get("testValues", {}).get(field, {}))
-        else:
-            merged.update(overrides.get(field, {}))
-
+            merged[k] = v
     return merged
 
-
 def _extract_units(d: dict):
-    """
-    Returns two dictionaries:
-    - cleaned keys without units
-    - dict mapping cleaned keys to the units found in the message (or None)
-    """
     clean = {}
     units = {}
     for key, value in d.items():
@@ -131,19 +116,49 @@ def _extract_units(d: dict):
         clean[clean_key] = value
     return clean, units
 
+def _apply_defaults(expected_schema, actual_dict, section_name="", actual_units=None):
+    result = dict(actual_dict)
+    units = dict(actual_units or {})
+    for key, constraints in expected_schema.items():
+        if key not in result and isinstance(constraints, dict) and "default" in constraints:
+            default_val = constraints["default"]
+            result[key] = default_val
+            if "unit" in constraints and constraints["unit"]:
+                units[key] = constraints["unit"]
+            logger.info(f"{section_name}.{key} not provided → using default={default_val}")
+    return result, units
+
+def _correct_units(clean_dict, unit_dict, expected_schema, section_name):
+    corrected = {}
+    corrected_units = {}
+    for key, value in clean_dict.items():
+        expected = expected_schema.get(key, {})
+        expected_unit = expected.get("unit")
+        actual_unit = unit_dict.get(key)
+
+        if not expected_unit:
+            corrected[key] = value
+            continue
+
+        if actual_unit == expected_unit:
+            corrected[key] = value
+            corrected_units[key] = expected_unit
+        elif (actual_unit, expected_unit) in UNIT_CONVERSIONS:
+            new_value = UNIT_CONVERSIONS[(actual_unit, expected_unit)](value)
+            logger.info(f"{section_name}.{key}: converted {value}{actual_unit} → {new_value}{expected_unit}")
+            corrected[key] = new_value
+            corrected_units[key] = expected_unit
+        else:
+            raise ValueError(f"{section_name}.{key}: unit mismatch (got '{actual_unit}', expected '{expected_unit}')")
+
+    return corrected, corrected_units
 
 def check_fields(section_name, actual_dict, expected_schema, actual_units=None):
-    """
-    Validate actual_dict against expected_schema keys and constraints.
-    Also validate units if actual_units are provided.
-    """
     actual_keys = set(actual_dict.keys())
     expected_keys = set(expected_schema.keys())
 
     missing = expected_keys - actual_keys
     extra = actual_keys - expected_keys
-
-    logger.debug(f"Checking section '{section_name}': actual={actual_keys}, expected={expected_keys}")
 
     if missing:
         raise ValueError(f"{section_name}: Missing fields: {missing}")
@@ -154,22 +169,13 @@ def check_fields(section_name, actual_dict, expected_schema, actual_units=None):
         value = actual_dict.get(key)
         unit_in_msg = actual_units.get(key) if actual_units else None
 
-        # Check unit matches registry
-        if constraints and isinstance(constraints, dict) and "unit" in constraints:
-            expected_unit = constraints["unit"]
-            if unit_in_msg and unit_in_msg != expected_unit:
-                raise ValueError(f"{section_name}.{key}: unit '{unit_in_msg}' does not match expected '{expected_unit}'")
+        if constraints.get("unit") and unit_in_msg != constraints["unit"]:
+            raise ValueError(f"{section_name}.{key}: unit '{unit_in_msg}' does not match expected '{constraints['unit']}'")
 
-        # Enum check
-        if constraints and isinstance(constraints, dict) and "enum" in constraints:
-            if value not in constraints["enum"]:
-                raise ValueError(f"{section_name}.{key}: '{value}' not in allowed values {constraints['enum']}")
+        if "enum" in constraints and value not in constraints["enum"]:
+            raise ValueError(f"{section_name}.{key}: '{value}' not in allowed values {constraints['enum']}")
 
-        # Min/max check
-        if constraints and isinstance(constraints, dict):
-            if "min" in constraints and value is not None:
-                if float(value) < constraints["min"]:
-                    raise ValueError(f"{section_name}.{key}: '{value}' < min {constraints['min']}")
-            if "max" in constraints and value is not None:
-                if float(value) > constraints["max"]:
-                    raise ValueError(f"{section_name}.{key}: '{value}' > max {constraints['max']}")
+        if "min" in constraints and value is not None and float(value) < constraints["min"]:
+            raise ValueError(f"{section_name}.{key}: '{value}' < min {constraints['min']}")
+        if "max" in constraints and value is not None and float(value) > constraints["max"]:
+            raise ValueError(f"{section_name}.{key}: '{value}' > max {constraints['max']}")
