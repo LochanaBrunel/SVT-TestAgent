@@ -2,6 +2,7 @@ import os
 import json
 from pathlib import Path
 
+#create kafka_port.json in the config file path
 CONFIG_FILE = Path(__file__).with_name("kafka_port.json")
 
 # default if nothing exists
@@ -17,7 +18,7 @@ else:
 # override if env var set
 KAFKA_LOCAL_PORT = os.getenv("KAFKA_LOCAL_PORT", saved_port)
 
-# if env var was set, update persistence file
+# if env var was set, update file
 if os.getenv("KAFKA_LOCAL_PORT"):
     with open(CONFIG_FILE, "w") as f:
         json.dump({"port": KAFKA_LOCAL_PORT}, f)
@@ -27,7 +28,7 @@ REQUEST_TOPIC = "svt.test-agent.request"
 REPLY_TOPIC = "svt.test-agent.request.reply"
 STATUS_TOPIC = "svt.test-agent.request.reply"
 
-# Kafka config – now dynamic port
+# Kafka config – dynamic port from kafka_port.json
 KAFKA_CONFIG = {
     "consumer": {
         "bootstrap.servers": f"localhost:{KAFKA_LOCAL_PORT}",
