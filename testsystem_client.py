@@ -76,7 +76,7 @@ class TestSystemClient:
 
             if i in checkpoints and v_in_target > 0:
                 fraction = (i // 20) / 5   # e.g. 20% → 0.2, 40% → 0.4
-                ramped_val = round(fraction * v_in_target, 3)
+                ramped_val = round(fraction * v_in_target, 10)
                 if i== 60 and is_testFail:
                     testStatus = "TestFail"
                     progMsg = f"{testStatus}: {chip_type} {test_name} stopped at {i}%."
