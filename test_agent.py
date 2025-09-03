@@ -5,7 +5,7 @@ import types
 import os, sys, importlib.util, argparse
 from confluent_kafka import Consumer, Producer, KafkaException
 from Registries.registryOfCommands import DEFAULT_COMMAND_HANDLERS, CHIP_COMMAND_OVERRIDES
-from Registries.validateTests import validate
+from Registries.validateTests import validate, validate_test_values
 
 logger = logging.getLogger("TestAgent")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s - %(message)s")
@@ -94,7 +94,7 @@ class TestAgent:
                         "agentStatus": "TestAgentFail",
                         "agentError": f"Unknown command type: {cmd_type}",
                     }
-                    return self._send_response(response, is_stream=False)
+                    return self._send_response(command, response, is_stream=False)
 
                 response = handler(data)
 
@@ -102,11 +102,11 @@ class TestAgent:
                 if isinstance(response, types.GeneratorType):
                     for r in response:
                         response = {**r, "test_id": test_id, "agentStatus": "TestAgentSuccess"}
-                        self._send_response(response, is_stream=(response["type"].endswith("StreamReply")))
+                        self._send_response(command, response, is_stream=(response["type"].endswith("StreamReply")))
                         
                 else:
                     response = {**r, "test_id": test_id, "agentStatus": "TestAgentSuccess"}
-                    self._send_response(response, is_stream=False)
+                    self._send_response(command, response, is_stream=False)
 
             except Exception as e:
                 response = {
@@ -131,8 +131,14 @@ class TestAgent:
         else:
             logger.info(f"Delivered message to {msg.topic()} [{msg.partition()}] @ offset {msg.offset()}")
 
-    def _send_response(self, response, is_stream):
-        #pdb.set_trace()  # for debugging
+    def _send_response(self, command, response, is_stream):
+        
+        test_values = response.get("testValues")
+        if isinstance(test_values, dict) and response.get("testStatus") == "TestSuccess":
+            pdb.set_trace()  # for debugging
+            _, __, correctedTestVal = validate_test_values(command, test_values)
+            response["testValues"] = correctedTestVal
+        
         topic = STATUS_TOPIC if is_stream else REPLY_TOPIC
         if self.local_mode:
             logger.info("LOCAL RESPONSE: %s", json.dumps(response, indent=2))
