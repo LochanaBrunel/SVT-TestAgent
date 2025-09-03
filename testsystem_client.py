@@ -20,7 +20,7 @@ class TestSystemClient:
     def run_test(self, chip_type: str, test_name: str, params: dict):
         self.initialize(chip_type, test_name)
         inputs = params.get("inputs", {})
-        testConfig= params.get("TestConfiguration", {})
+        testConfig= params.get("testConfiguration", {})
 
         yield from self.test_system_interface(chip_type, test_name, inputs, testConfig)
 
@@ -40,14 +40,14 @@ class TestSystemClient:
         }
 
         # Parse vInTarget
-        vInTarget_str = inputs.get("vInTarget", "0V").replace("V", "")
+        v_in_target_str = inputs.get("vInTarget", "0V").replace("V", "")
         try:
-            vInTarget = float(vInTarget_str)
+            v_in_target = float(v_in_target_str)
         except ValueError:
-            vInTarget = 0.0
+            v_in_target = 0.0
 
         # Stream progress from emulator
-        for progMsg, testStatus in self._progress_emulator(2, vInTarget, chip_type, test_name, True):
+        for progMsg, testStatus in self._progress_emulator(2, v_in_target, chip_type, test_name, True):
             if testStatus == "TestRunning":
                 testValue = "Running..."
                 yield testValue, testStatus, progMsg
@@ -60,12 +60,12 @@ class TestSystemClient:
     # ------------------------
     # Helper: Progress Emulator with Milestones  
     # ------------------------
-    def _progress_emulator(self, duration: float = 2.0, vInTarget: float = 0.0, chip_type: str = "Unknown", test_name: str = "PowerRampUp" ,is_testFail=False):
+    def _progress_emulator(self, duration: float = 2.0, v_in_target: float = 0.0, chip_type: str = "Unknown", test_name: str = "PowerRampUp" ,is_testFail=False):
         """
 
         Args:
             duration (float): Total duration of the progress (seconds) only in simulation.
-            vInTarget (float): Input voltage target for milestone calculation.
+            v_in_target (float): Input voltage target for milestone calculation.
 
         """
         steps = 100
@@ -78,14 +78,14 @@ class TestSystemClient:
         for i in range(1, steps + 1):
             time.sleep(duration / steps)
 
-            if i in checkpoints and vInTarget > 0:
+            if i in checkpoints and v_in_target > 0:
                 fraction = (i // 20) / 5   # e.g. 20% → 0.2, 40% → 0.4
-                ramped_val = round(fraction * vInTarget, 3)
+                ramped_val = round(fraction * v_in_target, 3)
                 if i== 60 and is_testFail:
                     testStatus = "TestFail"
                     progMsg = f"{testStatus}: {chip_type} {test_name} stopped at {i}%."
                     logger.warning(progMsg)
-                elif ramped_val == vInTarget:
+                elif ramped_val == v_in_target:
                     testStatus = "TestSuccess"
                     progMsg = f"{testStatus}: {chip_type} {test_name} completed succesfully."
                     logger.info(progMsg)

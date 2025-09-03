@@ -8,7 +8,7 @@
         "params": {
             "chipName": "SLDO",
             "testName": "PowerRampUp",
-            "TestConfiguration": {
+            "testConfiguration": {
                 "mode": "Mode0",
                 "loadCapacitance": "10nF",
                 "loadCurrent": "40mA",
