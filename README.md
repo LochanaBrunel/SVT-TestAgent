@@ -1,6 +1,7 @@
+
 # TestAgent
 
-Kafka-based test agent framework.
+Kafka-based test agent framework with Dockerized Kafka/ZooKeeper and pluggable test command handlers.
 
 ---
 
@@ -9,71 +10,64 @@ Kafka-based test agent framework.
 ### 1. Clone the repository
 ```bash
 git clone https://github.com/<your-org>/<your-repo>.git
-cd <your-repo>
-```
+cd SVT-TestAgent
 
-### 2. Create & activate a virtual environment
-```bash
+2. Create & activate a virtual environment
+
 python3 -m venv venv
 source venv/bin/activate      # macOS/Linux
-# .\\venv\\Scripts\\activate  # Windows PowerShell
-```
+# .\venv\Scripts\activate     # Windows PowerShell
 
-### 3. Install in editable mode
-```bash
+3. Install in editable mode
+
 pip install -e .
-```
 
-This installs all dependencies and makes the following commands available:
-- `start-broker`
-- `stop-broker`
-- `run-testAgent`
-- `send-dummy-message`
+This installs dependencies and makes the following commands available globally in your venv:
+	•	start-broker
+	•	stop-broker
+	•	run-testAgent
+	•	send-dummy-message
 
----
+⸻
 
-## 🐳 Running Kafka Broker
+🐳 Running Kafka Broker
 
-### Start broker (with chosen port)
-```bash
-KAFKA_LOCAL_PORT=9094 start-broker
-```
+Start broker (with chosen port)
 
-- Spins up ZooKeeper, Kafka, and Kafka-UI via Docker Compose.
-- Auto-creates topics:
-  - `svt.test-agent.request`
-  - `svt.test-agent.request.reply`
-  - `svt.test-agent.status`
-- Saves the chosen port (here 9094) to `./kafka_port.json`.
-- Next runs will reuse this port automatically.
+KAFKA_LOCAL_PORT=<any_prefered_port> start-broker
 
-### Stop broker
-```bash
+	•	Spins up ZooKeeper, Kafka, and Kafka-UI via Docker Compose.
+	•	Auto-creates topics:
+	•	svt.test-agent.request
+	•	svt.test-agent.request.reply
+	•	svt.test-agent.status
+	•	Saves the chosen port (e.g. 9094) into ./kafka_port.json.
+	•	Next runs will reuse this port automatically.
+
+Stop broker
+
 stop-broker
-```
 
-Stops containers and removes volumes.
+Stops and cleans up all Kafka/ZooKeeper containers and volumes.
 
----
+⸻
 
-## 🧪 Running the Agent
+🧪 Running the Agent
 
-From your project folder:
-```bash
+From your project folder (with your own config.py):
+
 run-testAgent
-```
 
-- Connects to Kafka using the port saved in `./kafka_port.json`.
-- Uses your local `config.py` if present, otherwise falls back to the package default.
-- Subscribes to `svt.test-agent.request`.
+	•	Connects to Kafka using the port saved in ./kafka_port.json.
+	•	Uses your local config.py if present (project-based config).
+	•	Subscribes to the svt.test-agent.request topic.
 
----
+⸻
 
-## 📤 Sending a Test Message
+📤 Sending a Test Message
 
-Prepare a JSON file (e.g. `test_message.json`) with a command payload:
+Create a JSON payload (e.g. test_message.json):
 
-```json
 {
   "command": "RunTest",
   "testId": "001",
@@ -83,52 +77,49 @@ Prepare a JSON file (e.g. `test_message.json`) with a command payload:
     }
   }
 }
-```
 
-Send it to the agent:
-```bash
+Send it:
+
 send-dummy-message test_message.json
-```
 
-- Automatically picks `./config.py` and the saved Kafka port.
-- Or specify explicitly:
-```bash
+	•	Defaults to ./config.py + saved port.
+	•	Or specify config explicitly:
+
 send-dummy-message config.py test_message.json
-```
 
----
 
-## 📊 Kafka UI
+⸻
 
-Kafka-UI runs on [http://localhost:8088](http://localhost:8088) by default.  
-Use it to browse topics, partitions, and messages.
+📊 Kafka UI
 
----
+Kafka-UI runs on http://localhost:8088.
+Use it to browse topics, partitions, offsets, and messages.
 
-## ⚡ Commands Recap
+⸻
 
-| Command             | Description                                       |
-|---------------------|---------------------------------------------------|
-| `start-broker`      | Start Kafka broker and create topics              |
-| `stop-broker`       | Stop Kafka broker and remove volumes              |
-| `run-testAgent`     | Run the agent with saved port/config              |
-| `send-dummy-message`| Send a JSON test message to the agent’s request topic |
+⚡ Commands Recap
 
----
+Command	Description
+start-broker	Start Kafka broker and auto-create topics
+stop-broker	Stop Kafka broker and remove volumes
+run-testAgent	Run the agent with project config.py + saved port
+send-dummy-message	Send a JSON test message to the agent’s request topic
 
-## 🛠 Development Notes
 
-- Extend handlers in **`TestAgent/cmd_handler.py`**.
-- Register them in **`TestAgent/Registries/registryOfCommands.py`**.
-- Define test metadata in **`TestAgent/Registries/registryOfTests.py`**.
-- Validation logic is in **`TestAgent/Registries/validateTests.py`**.
+⸻
 
----
+🛠 Development Notes
+	•	Extend handlers in TestAgent/cmd_handler.py.
+	•	Register handlers in TestAgent/Registries/registryOfCommands.py.
+	•	Define test metadata in TestAgent/Registries/registryOfTests.py.
+	•	Add validation rules in TestAgent/Registries/validateTests.py.
+	•	Broker startup/shutdown is handled via TestAgent/Dev/startup.py.
 
-## 📋 Requirements
+⸻
 
-- Python 3.8+
-- Docker + Docker Compose
-- Virtual environment (`venv`) recommended
+📋 Requirements
+	•	Python 3.8+
+	•	Docker + Docker Compose
+	•	Virtual environment (venv) recommended
 
----
+⸻
