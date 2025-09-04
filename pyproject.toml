@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "testagent"
+version = "0.1.0"
+description = "TestAgent Kafka-based agent"
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = ["kafka-python", "confluent-kafka"]
+
+[tool.setuptools]
+packages = { find = { where = ["."], include = ["TestAgent*"] } }
+
+[tool.setuptools.package-data]
+TestAgent = ["Dev/**/*.yml", "Dev/**/*.yaml", "Registries/*.py"]
+
+[project.scripts]
+start-broker      = "TestAgent.Dev.startup:start"
+stop-broker       = "TestAgent.Dev.startup:stop"
+run-testAgent     = "TestAgent.Dev.startup:run_agent"
+send-dummy-message = "TestAgent.ExternalDummies.send_request:main"

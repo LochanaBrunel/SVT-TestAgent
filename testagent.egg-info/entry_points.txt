@@ -1,3 +1,0 @@
-[console_scripts]
-start-broker = TestAgent.Dev.startup:start
-stop-broker = TestAgent.Dev.startup:stop
