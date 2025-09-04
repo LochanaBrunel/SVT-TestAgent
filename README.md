@@ -11,16 +11,21 @@ Kafka-based test agent framework with Dockerized Kafka/ZooKeeper and pluggable t
 ```bash
 git clone https://github.com/<your-org>/<your-repo>.git
 cd SVT-TestAgent
+``````
 
 2. Create & activate a virtual environment
 
+```bash
 python3 -m venv venv
 source venv/bin/activate      # macOS/Linux
 # .\venv\Scripts\activate     # Windows PowerShell
-
+````
+``
 3. Install in editable mode
 
+```bash
 pip install -e .
+```
 
 This installs dependencies and makes the following commands available globally in your venv:
 	•	start-broker
@@ -33,8 +38,9 @@ This installs dependencies and makes the following commands available globally i
 🐳 Running Kafka Broker
 
 Start broker (with chosen port)
-
+```bash
 KAFKA_LOCAL_PORT=<any_prefered_port> start-broker
+```
 
 	•	Spins up ZooKeeper, Kafka, and Kafka-UI via Docker Compose.
 	•	Auto-creates topics:
@@ -46,7 +52,9 @@ KAFKA_LOCAL_PORT=<any_prefered_port> start-broker
 
 Stop broker
 
+```bash
 stop-broker
+```
 
 Stops and cleans up all Kafka/ZooKeeper containers and volumes.
 
@@ -67,7 +75,7 @@ run-testAgent
 📤 Sending a Test Message
 
 Create a JSON payload (e.g. test_message.json):
-
+```bash
 {
   "command": "RunTest",
   "testId": "001",
@@ -77,6 +85,7 @@ Create a JSON payload (e.g. test_message.json):
     }
   }
 }
+```
 
 Send it:
 
