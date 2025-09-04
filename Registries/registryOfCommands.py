@@ -2,7 +2,7 @@ import importlib
 import inspect
 
 # Load all functions from cmd_handler module
-cmd_handler_module = importlib.import_module("cmd_handler")
+cmd_handler_module = importlib.import_module("TestAgent.cmd_handler")
 
 ALL_HANDLERS = {
     name: obj

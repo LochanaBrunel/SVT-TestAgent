@@ -4,8 +4,8 @@ import pdb
 import types
 import os, sys, importlib.util, argparse
 from confluent_kafka import Consumer, Producer, KafkaException
-from Registries.registryOfCommands import DEFAULT_COMMAND_HANDLERS, CHIP_COMMAND_OVERRIDES
-from Registries.validateTests import validate, validate_test_values
+from TestAgent.Registries.registryOfCommands import DEFAULT_COMMAND_HANDLERS, CHIP_COMMAND_OVERRIDES
+from TestAgent.Registries.validateTests import validate, validate_test_values
 
 logger = logging.getLogger("TestAgent")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s - %(message)s")
@@ -135,7 +135,6 @@ class TestAgent:
         
         test_values = response.get("testValues")
         if isinstance(test_values, dict) and response.get("testStatus") == "TestSuccess":
-            pdb.set_trace()  # for debugging
             _, __, correctedTestVal = validate_test_values(command, test_values)
             response["testValues"] = correctedTestVal
         
@@ -169,8 +168,7 @@ class TestAgent:
 
 def load_config(path):
     if not os.path.isabs(path):
-        base = os.path.dirname(__file__)
-        path = os.path.join(base, path)
+        path = os.path.join(os.getcwd(), path)
 
     spec = importlib.util.spec_from_file_location("custom_config", path)
     config = importlib.util.module_from_spec(spec)
@@ -180,7 +178,10 @@ def load_config(path):
 
 
 
-if __name__ == "__main__":
+def main():
+    import sys
+    import argparse
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--local", action="store_true", help="Run without Kafka, process local JSON")
     parser.add_argument("--json", type=str, help="Path to JSON file with test command")
@@ -189,7 +190,7 @@ if __name__ == "__main__":
 
     if args.local:
         if not args.json:
-            logger.error("In --local mode you must provide --json <file>")
+            print("❌ In --local mode you must provide --json <file>")
             sys.exit(1)
         with open(args.json) as f:
             debug_msg = json.load(f)
@@ -199,6 +200,7 @@ if __name__ == "__main__":
             config = load_config(args.config_file)
         else:
             from . import config
+        global REQUEST_TOPIC, REPLY_TOPIC, STATUS_TOPIC, KAFKA_CONFIG
         REQUEST_TOPIC = config.REQUEST_TOPIC
         REPLY_TOPIC = config.REPLY_TOPIC
         STATUS_TOPIC = config.STATUS_TOPIC

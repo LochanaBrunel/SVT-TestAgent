@@ -1,7 +1,8 @@
+# ExternalDummies/TopicCreation.py
+
 import sys
 from kafka.admin import KafkaAdminClient, NewTopic
 import importlib.util
-import pdb
 
 def load_config(path):
     """Dynamically import a config module from a given file path."""
@@ -11,7 +12,6 @@ def load_config(path):
     return config
 
 def create_topics(config):
-    
     """Create topics defined in the config module."""
     bootstrap_servers = config.KAFKA_CONFIG["producer"]["bootstrap.servers"]
     topics = [config.REQUEST_TOPIC, config.REPLY_TOPIC]
@@ -29,11 +29,13 @@ def create_topics(config):
     except Exception as e:
         print(f"⚠️ Error while creating topics: {e}")
 
+def main(config_file="config.py"):
+    """Entry point for both CLI and Python imports."""
+    config = load_config(config_file)
+    create_topics(config)
+
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Usage: python3 topicCreation.py <config_file.py>")
+        print("Usage: python3 TopicCreation.py <config_file.py>")
         sys.exit(1)
-
-    config_path = sys.argv[1]
-    config = load_config(config_path)
-    create_topics(config)
+    main(sys.argv[1])
