@@ -23,6 +23,9 @@ if os.getenv("KAFKA_LOCAL_PORT"):
         json.dump({"port": KAFKA_LOCAL_PORT}, f)
 
 # Hard-coded topics for your requirement
+# DB Agent topics
+DB_REQUEST_TOPIC = "svt.db-agent.request"
+DB_REPLY_TOPIC   = "svt.db-agent.request.reply" 
 REQUEST_TOPIC = "svt.test-agent.request"
 REPLY_TOPIC = "svt.test-agent.request.reply"
 STATUS_TOPIC = "svt.test-agent.request.reply"
@@ -38,3 +41,19 @@ KAFKA_CONFIG = {
         "bootstrap.servers": f"localhost:{KAFKA_LOCAL_PORT}",
     }
 }
+
+# Default: Emulator
+BACKEND = {
+    "class": "TestAgent.testSystemBackend.emulator.EmulatorBackend",
+    "kwargs": {}
+}
+
+# To use real system:
+# BACKEND = {
+#     "class": "TestAgent.testSystemBackend.real_backend.RealBackend",
+#     "kwargs": {
+#         "host": ",
+#         "port": 9000,
+#         "timeout": 30,
+#     }
+# }

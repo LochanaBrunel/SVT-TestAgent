@@ -1,0 +1,8 @@
+{
+    "command": "GetAllTests",
+    "data": {
+        "filter": {
+            "chipId": 0
+        }
+    }    
+}

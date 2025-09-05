@@ -15,7 +15,7 @@
                 "temperature(C)": 25
                 },
             "inputs": {
-                "vInTarget(uV)": 1.55,
+                "vInTarget(mV)": 1.55,
                 "iInLimit(A)": 1.5,
                 "rampRate(kV/s)": 3.1
             }
